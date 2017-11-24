@@ -10,8 +10,8 @@ class VGG(chainer.Chain):
         super(VGG, self).__init__()
         with self.init_scope():
             self.base = BaseVGG()
-            self.fc6 = L.Linear(None, 4096)
-            self.fc7 = L.Linear(None, 4096)
+            self.fc6 = L.Linear(None, 512)
+            self.fc7 = L.Linear(None, 512)
             self.fc8 = L.Linear(None, class_labels)
 
         if pretrained_model:
@@ -48,9 +48,6 @@ class BaseVGG(chainer.Chain):
             self.conv5_1 = L.Convolution2D(512, 512, 3, 1, 1)
             self.conv5_2 = L.Convolution2D(512, 512, 3, 1, 1)
             self.conv5_3 = L.Convolution2D(512, 512, 3, 1, 1)
-            # self.fc6 = L.Linear(512 * 7 * 7, 4096)
-            # self.fc7 = L.Linear(4096, 4096)
-            # self.fc8 = L.Linear(4096, class_labels)
 
     def __call__(self, x):
         h = F.relu(self.conv1_1(x))
@@ -76,42 +73,3 @@ class BaseVGG(chainer.Chain):
         h = F.relu(self.conv5_3(h))
         h = F.max_pooling_2d(h, ksize=2, stride=2)
         return h
-
-        # h = F.dropout(F.relu(self.fc6(h)))
-        # h = F.dropout(F.relu(self.fc7(h)))
-        # return self.fc8(h)
-
-
-# class VGG(chainer.Chain):
-#     def __init__(self, class_labels=1000, train_more_layer=False, not_fine_tuning=False):
-#         super(VGG, self).__init__()
-#         self.train_more_layer = train_more_layer
-#
-#         with self.init_scope():
-#             if not_fine_tuning:
-#                 print('not_fine_tuning')
-#                 self.base = L.VGG16Layers(None)
-#             else:
-#                 print('fine_tuning')
-#                 self.base = L.VGG16Layers()
-#             if self.train_more_layer:
-#                 self.fc6 = L.Linear(None, 4096)
-#                 self.fc7 = L.Linear(None, 4096)
-#             self.fc8 = L.Linear(None, class_labels)
-#
-#     def __call__(self, x, t):
-#         h = self.predict(x)
-#         loss = F.softmax_cross_entropy(h, t)
-#         chainer.report({'loss': loss, 'accuracy': F.accuracy(h, t)}, self)
-#         return loss
-#
-#     def predict(self, x):
-#         if self.train_more_layer:
-#             h = self.base(x, layers=['pool5'])['pool5']
-#             h = F.dropout(F.relu(self.fc6(h)))
-#             h = F.dropout(F.relu(self.fc7(h)))
-#         else:
-#             print(x.shape)
-#             h = self.base(x, layers=['fc7'])['fc7']
-#             print(h.shape)
-#         return self.fc8(h)
