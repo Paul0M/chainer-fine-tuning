@@ -10,13 +10,16 @@ import chainer
 from chainer import training
 from chainer.training import extensions
 
-import models.vgg
+import models.vgg_v1a
+import models.vgg_v1b
 import models.vgg_v2
 
 
 def main():
     archs = {
-        'v1': models.vgg.VGG,
+        'v1': models.vgg_v1a.VGG,
+        'v1a': models.vgg_v1a.VGG,
+        'v1b': models.vgg_v1b.VGG,
         'v2': models.vgg_v2.VGG,
     }
 
@@ -40,7 +43,6 @@ def main():
     parser.add_argument('--train_size', '-s', type=int, default=0)
     parser.add_argument('--pretrained_model', '-m',
                         help='Path to pretrained model file')
-    parser.add_argument('--preprocess', '-p', action='store_true')
     args = parser.parse_args()
 
     # Load dataset
@@ -49,27 +51,6 @@ def main():
     if args.train_size > 0:
         train, _ = chainer.datasets.split_dataset_random(train, args.train_size, 0)
     print('train samples: {}'.format(len(train)))
-
-    def preprocess(data):
-        import numpy as np
-        from PIL import Image
-
-        image, label = data
-        image = np.clip(image * 255., 0., 255.)
-        image = np.asarray(image, dtype=np.uint8)
-        image = Image.fromarray(image.transpose(1, 2, 0))
-
-        image = image.resize((224, 224))
-        image = np.asarray(image, dtype=np.float32)
-        image = image[:, :, ::-1]
-        image -= np.array(
-            [103.939, 116.779, 123.68], dtype=np.float32)
-        image = image.transpose((2, 0, 1))
-
-        return image, label
-    if args.preprocess:
-        train = chainer.datasets.TransformDataset(train, preprocess)
-        test = chainer.datasets.TransformDataset(test, preprocess)
 
     train_iter = chainer.iterators.SerialIterator(train, args.batchsize)
     test_iter = chainer.iterators.SerialIterator(test, args.batchsize, repeat=False, shuffle=False)
